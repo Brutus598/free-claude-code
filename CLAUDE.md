@@ -107,3 +107,12 @@ Example commit on `main` after a packaging fix: bump `1.2.38` → `1.2.39`, run 
 ## TOOLS
 
 - Prefer built-in tools (grep, read_file, etc.) over manual workflows. Check tool availability before use.
+
+## BASE44 DEV ENVIRONMENT
+
+- Run with `docker compose -f docker-compose.base44.yml up -d` from the repo root. The app serves on port 3000.
+- The `python:3.14-slim` image ships Python 3.14.x (e.g. 3.14.8), but `.python-version` pins `3.14.0`. The compose sets `UV_PYTHON=3.14` + `UV_PYTHON_PREFERENCE=only-system` so uv uses the system interpreter instead of downloading 3.14.0.
+- `FCC_OPEN_BROWSER=false` is required in the container (no desktop browser). `MESSAGING_PLATFORM=none` and `VOICE_NOTE_ENABLED=false` avoid needing Discord/torch at boot.
+- The server has no live-reload mode (`fcc-server` runs uvicorn without `--reload`). After source edits, call `reload_preview` or `docker compose -f docker-compose.base44.yml restart app` to pick up changes.
+- The Admin UI at `/admin` is loopback-restricted by design (`require_loopback_admin` in `api/admin_routes.py`); it is not accessible through the preview proxy. The root `/` endpoint and `/health` confirm the server is running.
+- All provider API keys (NVIDIA NIM, OpenRouter, etc.) are optional — the app boots without any. To use a provider, add its key via the Base44 secrets dashboard or `/root/.fcc/.env` inside the container.

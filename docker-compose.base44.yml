@@ -1,0 +1,41 @@
+services:
+  app:
+    image: python:3.14-slim
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - fcc-venv:/app/.venv
+      - fcc-config:/root/.fcc
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - HOST=0.0.0.0
+      - FCC_OPEN_BROWSER=false
+      - MESSAGING_PLATFORM=none
+      - VOICE_NOTE_ENABLED=false
+      - UV_FROZEN=1
+      - UV_PYTHON=3.14
+      - UV_PYTHON_PREFERENCE=only-system
+      - BASE44_PREVIEW_MODE
+      - BASE44_PUBLIC_HOST_SUFFIX
+      - BASE44_SANDBOX_HOST_DOMAIN
+    command:
+      - sh
+      - -ec
+      - |
+        python -m pip install --no-cache-dir uv &&
+        uv sync --frozen --no-dev &&
+        exec uv run fcc-server
+    healthcheck:
+      test:
+        ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 180s
+    restart: on-failure
+
+volumes:
+  fcc-venv:
+  fcc-config:
