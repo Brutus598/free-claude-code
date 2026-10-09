@@ -31,6 +31,7 @@ from .ports import ApiServices
 router = APIRouter()
 
 STATIC_DIR = Path(__file__).resolve().parent / "admin_static"
+CAPTURE_STATIC_DIR = Path(__file__).resolve().parent / "capture_static"
 LOCAL_PROVIDER_PATHS = {
     "lmstudio": "/models",
     "llamacpp": "/models",
@@ -89,6 +90,24 @@ def _asset_response(filename: str) -> FileResponse:
     if not path.is_file():
         raise HTTPException(status_code=404, detail="Admin asset not found")
     return FileResponse(path)
+
+
+@router.get("/capture", include_in_schema=False)
+async def capture_page():
+    """Serve the local-first capture analyzer.
+
+    Capture files are parsed exclusively by browser-side JavaScript and are never
+    uploaded to this server.
+    """
+
+    return FileResponse(CAPTURE_STATIC_DIR / "index.html")
+
+
+@router.get("/capture/assets/{filename}", include_in_schema=False)
+async def capture_asset(filename: str):
+    if filename not in {"capture.css", "capture.js"}:
+        raise HTTPException(status_code=404, detail="Capture analyzer asset not found")
+    return FileResponse(CAPTURE_STATIC_DIR / filename)
 
 
 @router.get("/admin", include_in_schema=False)

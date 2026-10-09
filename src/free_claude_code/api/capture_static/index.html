@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#07100f" />
+    <title>Traceglass — Capture Analyzer</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><path fill=%22%2308d49d%22 d=%22M6 33h12l6-18 10 35 7-22 5 8h12v7H42l-8-12-11 28-9-19H6z%22/></svg>" />
+    <link rel="stylesheet" href="/capture/assets/capture.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/capture" aria-label="Traceglass Startseite">
+        <span class="brand-mark"><i></i><i></i><i></i></span>
+        <span><strong>TRACEGLASS</strong><small>Capture Analyzer</small></span>
+      </a>
+      <div class="file-summary" id="fileSummary" hidden>
+        <span class="live-dot"></span><strong id="fileName">capture.cfa</strong>
+        <span id="fileMeta">—</span>
+      </div>
+      <nav class="top-actions" aria-label="Dateiaktionen">
+        <button class="ghost" id="demoButton" type="button">Demo öffnen</button>
+        <button class="primary" id="openButton" type="button"><span>＋</span> Capture öffnen</button>
+        <input id="fileInput" type="file" accept=".cfa,.pcap,.pcapng,.cap" hidden />
+      </nav>
+    </header>
+
+    <main id="welcomeView" class="welcome">
+      <section class="hero">
+        <div class="eyebrow"><span></span> LOKAL · SICHER · SCHNELL</div>
+        <h1>Funkverkehr.<br /><em>Glasklar.</em></h1>
+        <p>Öffne CFA-, PCAP- und PCAPNG-Aufzeichnungen direkt im Browser. Trenne Bluetooth, WLAN, USB und Netzwerkverkehr mit präzisen Filtern.</p>
+        <div class="hero-actions">
+          <button class="primary large" id="heroOpenButton" type="button">Capture analysieren <span>→</span></button>
+          <span class="privacy"><b>✓</b> Deine Datei verlässt dieses Gerät nicht.</span>
+        </div>
+      </section>
+      <section class="drop-card" id="dropZone">
+        <div class="radar"><span class="radar-ring ring-1"></span><span class="radar-ring ring-2"></span><span class="radar-ring ring-3"></span><span class="radar-sweep"></span><span class="radar-core"></span></div>
+        <h2>Datei hier ablegen</h2>
+        <p>oder klicken, um eine Capture-Datei auszuwählen</p>
+        <div class="format-tags"><span>.CFA</span><span>.PCAP</span><span>.PCAPNG</span><span>.CAP</span></div>
+        <small>Bis zur verfügbaren Browser-Speichergrenze</small>
+      </section>
+      <section class="capabilities">
+        <article><b>01</b><span class="cap-icon bluetooth">ᛒ</span><div><h3>Bluetooth & BLE</h3><p>HCI, L2CAP, ATT, SMP und Advertising getrennt untersuchen.</p></div></article>
+        <article><b>02</b><span class="cap-icon">⌁</span><div><h3>Leistungsstarke Filter</h3><p>Wireshark-ähnliche Ausdrücke und sofortige Protokollfilter.</p></div></article>
+        <article><b>03</b><span class="cap-icon">⌬</span><div><h3>Byte für Byte</h3><p>Protokollbaum, Hexdump, ASCII und Konversationsansicht.</p></div></article>
+      </section>
+    </main>
+
+    <main id="analyzerView" class="analyzer" hidden>
+      <aside class="sidebar">
+        <div class="side-section">
+          <label>VERKEHR TRENNEN</label>
+          <div id="protocolFilters" class="protocol-filters"></div>
+        </div>
+        <div class="side-section grow">
+          <label>ANSICHTEN</label>
+          <button class="side-link active" data-view="packets"><span>▤</span> Pakete <b id="packetCount">0</b></button>
+          <button class="side-link" data-view="conversations"><span>⇄</span> Verbindungen <b id="conversationCount">0</b></button>
+          <button class="side-link" data-view="statistics"><span>▥</span> Statistiken</button>
+        </div>
+        <div class="side-footer">
+          <div><span></span><p><strong>Lokale Analyse</strong><small>Keine Datenübertragung</small></p></div>
+          <button id="closeButton" class="text-button" type="button">Datei schließen</button>
+        </div>
+      </aside>
+
+      <section class="workspace">
+        <div class="filterbar">
+          <span class="filter-icon">⌕</span>
+          <input id="displayFilter" autocomplete="off" spellcheck="false" placeholder="Anzeigefilter eingeben, z. B. bluetooth && length > 20" />
+          <kbd>↵</kbd>
+          <button id="clearFilter" type="button" title="Filter löschen">×</button>
+          <button id="exportButton" class="export-button" type="button">Exportieren⌄</button>
+          <div id="exportMenu" class="export-menu" hidden><button data-format="json">JSON</button><button data-format="csv">CSV</button></div>
+        </div>
+        <div id="filterError" class="filter-error" hidden></div>
+
+        <section id="packetsView" class="view-panel packet-layout">
+          <div class="packet-pane">
+            <table class="packet-table">
+              <thead><tr><th>NR.</th><th>ZEIT</th><th>QUELLE</th><th>ZIEL</th><th>PROTOKOLL</th><th>LÄNGE</th><th>INFO</th></tr></thead>
+              <tbody id="packetRows"></tbody>
+            </table>
+            <div id="emptyState" class="empty-state" hidden><span>⌕</span><h3>Keine Pakete gefunden</h3><p>Ändere den Anzeigefilter oder wähle ein anderes Protokoll.</p></div>
+          </div>
+          <div class="inspector" id="inspector">
+            <div class="inspector-head"><div><label>PAKETDETAILS</label><strong id="selectedPacketTitle">Kein Paket gewählt</strong></div><div class="tabs"><button class="active" data-tab="details">Protokoll</button><button data-tab="bytes">Bytes</button></div></div>
+            <div id="detailsTab" class="detail-tree"><p class="placeholder">Wähle ein Paket aus der Liste.</p></div>
+            <div id="bytesTab" class="hex-view" hidden></div>
+          </div>
+        </section>
+
+        <section id="conversationsView" class="view-panel simple-view" hidden>
+          <div class="section-heading"><div><span>VERBINDUNGEN</span><h2>Konversationen</h2></div><p>Zusammengefasste Endpunktpaare der gefilterten Pakete.</p></div>
+          <table class="data-table"><thead><tr><th>PROTOKOLL</th><th>ENDPUNKT A</th><th>ENDPUNKT B</th><th>PAKETE</th><th>BYTES</th><th>ANTEIL</th></tr></thead><tbody id="conversationRows"></tbody></table>
+        </section>
+
+        <section id="statisticsView" class="view-panel simple-view" hidden>
+          <div class="section-heading"><div><span>ÜBERSICHT</span><h2>Capture-Statistik</h2></div><p id="captureDuration">Dauer —</p></div>
+          <div class="stat-grid"><article><span>PAKETE</span><strong id="statPackets">0</strong><small>sichtbar</small></article><article><span>DATENVOLUMEN</span><strong id="statBytes">0 B</strong><small>dekodiert</small></article><article><span>PROTOKOLLE</span><strong id="statProtocols">0</strong><small>erkannt</small></article><article><span>Ø PAKETGRÖSSE</span><strong id="statAverage">0 B</strong><small>pro Paket</small></article></div>
+          <div class="chart-card"><div><span>PROTOKOLLVERTEILUNG</span><strong>Pakete nach Familie</strong></div><div id="protocolChart" class="protocol-chart"></div></div>
+        </section>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" role="status"></div>
+    <script src="/capture/assets/capture.js"></script>
+  </body>
+</html>

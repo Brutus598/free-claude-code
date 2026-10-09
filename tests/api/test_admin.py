@@ -72,6 +72,31 @@ def test_admin_page_is_loopback_only(monkeypatch, tmp_path):
     assert remote_client.get("/admin").status_code == 403
 
 
+def test_capture_analyzer_serves_local_first_app(monkeypatch, tmp_path):
+    _set_home(monkeypatch, tmp_path)
+    client = TestClient(create_test_app(), client=("203.0.113.10", 50000))
+
+    page = client.get("/capture")
+    script = client.get("/capture/assets/capture.js")
+    styles = client.get("/capture/assets/capture.css")
+
+    assert page.status_code == 200
+    assert "Traceglass" in page.text
+    assert "Deine Datei verlässt dieses Gerät nicht" in page.text
+    assert script.status_code == 200
+    assert "parsePcapng" in script.text
+    assert styles.status_code == 200
+    assert "--green:#08d49d" in styles.text
+
+
+def test_capture_analyzer_rejects_unknown_assets(monkeypatch, tmp_path):
+    _set_home(monkeypatch, tmp_path)
+
+    response = _local_client(create_test_app()).get("/capture/assets/missing.js")
+
+    assert response.status_code == 404
+
+
 @pytest.mark.parametrize(
     "path",
     (
